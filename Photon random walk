@@ -1,1 +1,155 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from itertools import cycle
+from mpl_toolkits.mplot3d import Axes3D
+import time
+import math
+import pickle
 
+%matplotlib inline
+
+colors = cycle('bgrcmykbgrcmykbgrcmykbgrcmyk')
+def next_step(sigma):
+    return np.random.normal(0, sigma, 3)
+#### Q2
+# Generating Random Numbers
+mu = 0.0
+sigma = 0.00577
+
+x = np.random.normal(mu, sigma, int(1e8))
+y = np.random.normal(mu, sigma, int(1e8))
+z = np.random.normal(mu, sigma, int(1e8))
+x[:10]
+# Verifying the distribution
+count, bins, ignored = plt.hist(x, 30, density=True)
+plt.plot(bins, 1/(sigma * np.sqrt(2 * np.pi)) *
+              np.exp( - (bins - mu)**2 / (2 * sigma**2) ),
+              linewidth=2, color='r')
+plt.show()
+#### Q3
+ph = np.zeros(3)
+pos_0 = np.zeros((1,3))
+
+start = time.time()
+
+for i in range(1, int(1e8)):
+    ph += next_step(sigma=0.00577)
+    pos_0 = np.vstack((pos_0, ph))
+    print(f"{i} th step done")
+end = time.time()
+
+print(f"Time taken: {end - start} s.")
+pos_0
+with open('pos_0.pkl', 'wb') as f:
+    pickle.dump(pos_0, f)
+#### Q4
+df = pd.read_table("photonDistances2.dat", sep="\s+", header=None)
+df.head()
+df.describe()
+pos = df.drop(columns=3)
+pos.head()
+print(f"Mean: {pos.stack().mean()}")
+print(f"Std Dev: {pos.stack().std()}")
+
+count, bins, ignored = plt.hist(df[0], 30, density=True)
+plt.show()
+# Verifying the distribution
+count, bins, ignored = plt.hist(df[0], 30, density=True)
+plt.show()
+count, bins, ignored = plt.hist(df[1], 30, density=True)
+plt.show()
+count, bins, ignored = plt.hist(df[2], 30, density=True)
+plt.show()
+
+#### Q5
+mu = pos.stack().mean()
+sigma_sec = pos.stack().std()
+print(f"mu: {mu}, sigma: {sigma_sec}")
+ph_1s = np.zeros(3)
+pos_1s = np.zeros((1,3))
+
+start = time.time()
+# for i in range(0, int(1e5//2)):
+for i in range(0, 31557600):
+    ph_1s += next_step(sigma_sec)
+    pos_1s = np.vstack((pos_1s, ph_1s))
+    print(f"{i} th step done")
+end = time.time()
+
+print(f"Time Taken: {end-start}")
+pos_1s
+with open('pos_1s.pkl', 'wb') as f:
+    pickle.dump(pos_1s, f)
+#### Q6
+std_1yr = np.std(np.array(pos_1s))
+std_1yr
+#  SQRT(N * s^2) []
+std_1y = math.sqrt(31557600*1e8* (0.00577)**2)
+print(std_1y)
+# From the formula given in the project
+std_1y = math.sqrt(31557600*1e8* (0.00577)**2)
+ph_1y = np.zeros(3)
+yrs = 0
+rad_sun = 695842000
+pos_1y = np.zeros((1,3))
+start = time.time()
+
+while(np.linalg.norm(ph_1y) < rad_sun:
+    ph_1y += next_step(sigma = std_1y)
+#     print(ph_1y)
+    pos_1y = np.vstack((pos_1y, ph_1y))
+    print(f"{yrs} th step done")
+    yrs += 1 
+end = time.time()
+
+print(f"Years taken: {yrs}")
+print(f"Time Taken: {end - start} s")
+with open('pos_1y.pkl', 'wb') as f:
+    pickle.dump(pos_1y, f)
+
+#### Q7
+# with open("pos_0.pkl", 'rb') as f:
+#     pos_0 = pickle.load(f)
+# Plots pos_0
+# XY
+fig = plt.figure(figsize=(10,8),dpi=200)
+
+plt.plot(pos_0[:,0], pos_0[:,1], c='blue', alpha=0.5, lw=0.25, ls='-')
+# XZ
+fig = plt.figure(figsize=(10,8),dpi=200)
+
+plt.plot(pos_0[:,0], pos_0[:,2], c='blue', alpha=0.5, lw=0.25, ls='-')
+# YZ
+fig = plt.figure(figsize=(10,8),dpi=200)
+
+plt.plot(pos_0[:,1], pos_0[:,2], c='blue', alpha=0.5, lw=0.25, ls='-')
+# with open("pos_1s.pkl", 'rb') as f:
+#     pos_1s = pickle.load(f)
+# Plots 1s
+fig = plt.figure(figsize=(10,8),dpi=200)
+
+plt.plot(pos_1s[:][0], pos_1s[:][1], c='blue',alpha=0.25, ls='-')
+# XZ
+fig = plt.figure(figsize=(10,8),dpi=200)
+
+plt.plot(pos_1s[:][0], pos_1s[:][2], c='blue',alpha=0.25, ls='-')
+# YZ
+fig = plt.figure(figsize=(10,8),dpi=200)
+
+plt.plot(pos_1s[:][1], pos_1s[:][2], c='blue',alpha=0.25, ls='-')
+# with open("pos_1y.pkl", 'rb') as f:
+#     pos_1y = pickle.load(f)
+# Plots 1y
+# XY
+fig = plt.figure(figsize=(10,8),dpi=200)
+
+plt.plot(pos_1y[:][0], pos_1y[:][1], c='blue', alpha=0.25, ls='-')
+# XZ
+fig = plt.figure(figsize=(10,8),dpi=200)
+
+plt.plot(pos_1y[:][0], pos_1y[:][2], c='blue', alpha=0.25, ls='-')
+# YZ
+fig = plt.figure(figsize=(10,8),dpi=200)
+
+plt.plot(pos_1y[:][1], pos_1y[:][2], c='blue', alpha=0.25, ls='-')
